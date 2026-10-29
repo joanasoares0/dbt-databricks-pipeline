@@ -1,0 +1,130 @@
+models:
+  - name: stg_job_postings
+    description: >
+      One row per posting per scrape day; a job re-scraped across days keeps every row
+      (the snapshot depends on them; fct_job_postings dedupes to one row per job).
+      685,695 rows after two cuts: the door-drop (151,147 scraper-flagged error rows —
+      staging's first cleanup, 3.03.3) and the test-earned null-id cut (6,255 id-less
+      incident-window postings, 3.09.4).
+    columns:
+      - name: job_id
+        description: >
+          The scraper's posting id. Not unique at this grain by design; uniqueness is
+          promised, and tested, at fct_job_postings.
+        data_tests:
+          - not_null
+      - name: search_term
+        description: The role the scraper searched for; exactly three values by construction.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Data Engineer', 'Data Analyst', 'Data Scientist']
+      - name: search_date
+        description: Scrape day; doubles as the incremental high-water mark in fct_job_postings.
+      - name: searched_at
+        description: Scrape timestamp (search_time renamed); anchors the snapshot's updated_at.
+      - name: search_location
+        description: Location parameter the scraper searched under.
+      - name: job_title
+        description: Posting title as scraped.
+      - name: company_name
+        description: Employer name, trimmed; the natural key into dim_company.
+      - name: job_location
+        description: Posting location as scraped.
+      - name: source_platform
+        description: Posting platform (job_via with the 'via ' scraper artifact stripped, ~6.3k rows).
+      - name: job_schedule_type
+        description: >
+          As scraped; 12,252 nulls stay null (documented, not fixed). 17 distinct values in
+          the wild, including combos like 'Full-time and Part-time' (25,242 rows), so the naive
+          four-value test below fails 28,776 rows by design: the 3.09.2 finding, kept visible at
+          warn severity instead of silently "fixed".
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Full-time', 'Part-time', 'Contractor', 'Internship']
+              config:
+                severity: warn
+      - name: job_work_from_home
+        description: True when the posting is flagged remote.
+      - name: job_posted_at
+        description: >
+          Raw relative posted time ('10 hours ago'), kept unparsed — search_date carries the
+          course's time axis (~95% of rows are scraped within a day of posting); parsing this
+          precisely is a supporter exercise.
+      - name: job_salary
+        description: Raw salary text, kept unparsed; the snapshot lesson diffs it across scrapes.
+      - name: salary_min
+        description: Lower bound parsed from the salary text; the single value when no range is given.
+        data_tests:
+          - non_negative
+      - name: salary_max
+        description: Upper bound parsed from the salary text; the single value when no range is given.
+        data_tests:
+          - non_negative
+      - name: salary_avg
+        description: >
+          THE standard salary measure: midpoint of the parsed range (a single value is its
+          own range). Deliberately unit-agnostic — always pair it with salary_period and
+          salary_currency filters; averaging across periods or currencies is mixing units.
+      - name: salary_period
+        description: "Pay period parsed from the salary text: year, hour, month, day, or week."
+      - name: salary_currency
+        description: >
+          Currency of the salary columns. Leading marker when present ('PKR', 'CA$', '₱');
+          a salaried row with no marker is stamped 'USD' — an explicit, documented assumption
+          (the scraper's locations are US-dominant) rather than a null you must remember the
+          meaning of. Null only when the row has no salary at all.
+      - name: has_health_insurance
+        description: Posting lists Health insurance among its extensions.
+      - name: has_dental_insurance
+        description: Posting lists Dental insurance among its extensions.
+      - name: has_paid_time_off
+        description: Posting lists Paid time off among its extensions.
+      - name: has_no_degree_mentioned
+        description: Posting lists No degree mentioned among its extensions.
+
+  - name: stg_job_postings_current
+    description: >
+      Ephemeral snapshot input: each job's current row as of the as_of cutoff
+      (the time machine). Inlined into job_postings_snapshot; never built.
+
+  - name: stg_job_skills
+    description: >
+      One row per (job_id, skill_keyword), straight off the raw table. A skill_id repeats
+      on a job when the posting names it two ways (spark, pyspark). Deliberately boring;
+      rename, order, trim is the staging discipline working.
+    columns:
+      - name: job_id
+        description: >
+          Every row's parent exists in stg_job_postings; the course export's join guarantees
+          it, so the relationships test passes by construction. Same assertion the datanerd
+          pipeline runs nightly in production, where integrity is a real risk.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_job_postings')
+                field: job_id
+      - name: skill_id
+        description: Skill key; categorized by the skill_categories seed via dim_skill.
+        data_tests:
+          - not_null
+      - name: skill_keyword
+        description: Skill text as extracted, trimmed.
+
+unit_tests:
+  - name: test_parse_salary_shapes
+    description: "parse_salary handles a range, a single value, and no salary at all"
+    model: stg_job_postings
+    given:
+      - input: source('jobs', 'raw_job_postings')
+        rows:
+          - {job_id: 1, job_salary: "100K–186K a year"}
+          - {job_id: 2, job_salary: "32.50 an hour"}
+          - {job_id: 3, job_salary: null}
+    expect:
+      rows:
+        - {job_id: 1, salary_min: 100000, salary_max: 186000}
+        - {job_id: 2, salary_min: 32.5, salary_max: 32.5}
+        - {job_id: 3, salary_min: null, salary_max: null}
