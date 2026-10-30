@@ -4,4 +4,4 @@ logs/
 target/
 .env
 
-macros
+# macros

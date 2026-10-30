@@ -1,0 +1,35 @@
+# OPTIONAL — this file is not required for anything to run. Analyses are
+# compiled, never built or tested, so properties here are documentation only
+# (they surface in `dbt docs generate`). Not covered in the lessons — kept as
+# a reference pattern for going above and beyond.
+analyses:
+  - name: jinja_practice
+    description: >
+      The Jinja scratchpad: compiled by dbt, never built. Where the slugify
+      macro got tested before it touched a real model.
+
+  - name: in_demand_skills
+    description: >
+      Skill demand across the whole star (fct ⋈ bridge ⋈ dim_skill): distinct
+      postings per skill. All roles by default; scope to one with
+      --vars 'job_title: Data Analyst'.
+
+  - name: top_skills_by_salary
+    description: >
+      Highest-paying skills: average annual salary per skill, filtered to
+      comparable pay (USD + yearly) on the fct unit columns.
+
+  - name: optimal_skills
+    description: >
+      Skills that are both in demand AND well paid, in one ranking; a
+      100-posting demand floor keeps one-posting salary outliers out.
+
+  - name: top_posting_editors
+    description: >
+      Which companies edit their postings the most — counts each company's
+      jobs with a closed snapshot version (dbt_valid_to IS NOT NULL).
+
+  - name: salary_swings
+    description: >
+      Biggest salary swings per posting, from the snapshot: MIN/MAX across a
+      job's versions, USD only. The top of the board is typos caught mid-edit.
