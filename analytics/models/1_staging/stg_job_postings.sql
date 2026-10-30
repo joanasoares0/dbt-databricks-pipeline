@@ -75,11 +75,14 @@ cleaned AS (
         -- one boolean per extension keyword: the loop probes the parsed
         -- array, slugify names the columns
         {% for keyword in extension_keywords %}
+
         ARRAY_CONTAINS(
             job_extensions,
             '{{ keyword }}'
         ) AS has_{{ slugify(keyword) }}
+        
         {{- "," if not loop.last }}
+
         {% endfor %}
 
     FROM parsed
