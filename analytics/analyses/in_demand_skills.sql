@@ -8,6 +8,7 @@ WITH job_postings AS (
 
     SELECT job_id
     FROM {{ ref('fct_job_postings') }}
+    
     {% if var('job_title', none) %}
     WHERE search_term = '{{ var("job_title") }}'
     {% endif %}

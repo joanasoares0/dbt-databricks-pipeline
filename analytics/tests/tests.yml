@@ -1,0 +1,13 @@
+# OPTIONAL — this file is not required for anything to run. Singular tests
+# accept description properties from dbt 1.9; docs-only. Not covered in the
+# lessons — kept as a reference pattern for going above and beyond.
+data_tests:
+  - name: assert_salaries_sane
+    description: >
+      Sanity bound on parsed yearly USD salaries (>= 1,000,000 flags).
+      Pinned to USD on purpose: across every currency the same bound flags
+      7,232 rows, mostly ₹/ZAR/PKR postings where seven figures is normal.
+      In USD it flags 27 typed "…–1M" ceilings, some later corrected by the
+      employer (Kobie Marketing: 800K–1M for one scrape in a 90K–125K life).
+      Runs at warn: documented data reality, not a broken pipeline. Points at
+      staging because fct keeps only the corrected latest scrape.
