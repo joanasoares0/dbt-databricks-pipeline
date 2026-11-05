@@ -1,12 +1,21 @@
-{#- dbt's default glues the profile schema onto declared layer names
-    (staging becomes default_staging — on screen from 3.33 until this fix
-    lands at 3.44). this is dbt's own macro with ONE edit: the else-branch
-    drops the glue — use MY names exactly. the name matters: override the
-    entry-point generate_schema_name (the docs template); a default__-named
-    copy can answer dbt show probes yet be skipped by a real build.
-    environments are separated by CATALOG (dev in the profile, prod set by the scheduled job); raw
-    keeps its own shared catalog. -#}
-    
+{#-
+    Use custom schema names exactly as written.
+
+    By default, dbt adds the target schema in front of any custom schema,
+    so a model configured with schema='staging' ends up in "default_staging".
+    This override keeps dbt's built-in logic with one small change: when a
+    model sets a custom schema, we use that name as-is (e.g. "staging").
+
+    Notes:
+      - The macro must be named generate_schema_name so dbt picks it up on
+        every run. A copy named default__generate_schema_name may seem to work
+        with `dbt show` but gets ignored during a real `dbt build`.
+      - Dev and prod are kept apart by catalog, not by schema prefix:
+        dev uses the catalog from the profile, and prod's catalog is set by
+        the scheduled job. 
+        Raw data lives in its own shared catalog.
+-#}
+
 {% macro generate_schema_name(custom_schema_name, node) -%}
 
     {%- set default_schema = target.schema -%}

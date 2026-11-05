@@ -1,14 +1,22 @@
--- a sanity bound: no posting legitimately pays seven figures a year. across ALL
--- currencies it fires 7,232 times, and most of those flags are the test's own
--- assumption being wrong: ₹, ZAR, PKR and friends legitimately pay seven figures
--- (₹ alone is 4,248 of them). fix the assumption, not the data: pinned to USD the
--- red drops to 27 rows, every one a range that ends in "1M" (a typed ceiling, not
--- a salary). one of them, Kobie Marketing's Decision Sciences Analyst, reads
--- 800K–1M for a single scrape inside a five-scrape 90K–125K life: the employer
--- corrected it within days, and only scrape grain still shows the bad one. the
--- 3.11.1 snapshot turns that into history; reading this red in two layers is the
--- 3.10.2 lesson. points at staging, not fct: fct keeps only the latest scrape.
--- warn, not error: documented data reality, not a broken pipeline.
+{#-
+    Sanity check: flags yearly USD salaries of $1,000,000 or more.
+
+    Why only USD? In currencies like ₹, ZAR or PKR, seven-figure yearly salaries
+    are normal. 
+    Checking every currency flagged 7,232 rows, mostly false alarms
+    (4,248 in ₹ alone). 
+    In USD it flags just 27 rows, all ranges ending in "1M",
+    which look like typos rather than real salaries.
+
+    Example: Kobie Marketing's Decision Sciences Analyst showed 800K–1M in one
+    scrape, but 90K–125K in the other four. The employer fixed it within days.
+
+    Why staging and not fct_job_postings? fct keeps only the latest scrape of
+    each job, so corrected typos like this one would be hidden there.
+
+    Set to warn, not error: these are known quirks in the source data,
+    not a bug in the pipeline.
+-#}
 
 {{ config(severity = 'warn') }}
 

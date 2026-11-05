@@ -32,14 +32,13 @@ SELECT
 FROM job_postings
 
 {% if is_incremental() %}
--- strict > is fine for this dataset; with late same-day arrivals,
--- merge idempotency makes >= the safer production choice
+-- On incremental runs, only process days newer than what's already loaded.
+-- `>` works for this dataset. If rows could arrive late on the same day,
+-- `>=` would be safer: the merge on job_id makes reprocessing a day harmless.
 WHERE search_date > (SELECT MAX(search_date) FROM {{ this }})
 {% endif %}
 
--- one row per job: latest scrape wins. ties stay arbitrary — one broken source
--- id carries ten unrelated postings at an identical searched_at; accepted
--- wobble (same ruling as the snapshot input model)
+-- One row per job: keep the most recent scrape.
 QUALIFY ROW_NUMBER() OVER (
     PARTITION BY job_id
     ORDER BY searched_at DESC

@@ -1,5 +1,9 @@
--- grain: one row per posting per SCRAPE DAY, not per job. re-scrapes stay in;
--- the snapshot replays them, and fct_job_postings owns the dedupe to one row per job.
+{#-
+    One row per job posting per scrape day, not one row per job.
+    The same job can appear several times if it was scraped more than once.
+    We keep those repeats on purpose: the snapshot uses them to track changes,
+    and fct_job_postings reduces them to one row per job.
+-#}
 
 {% set extension_keywords = [
     'Health insurance',
@@ -8,21 +12,24 @@
     'No degree mentioned'
 ] %}
 
+--filter source (always filter as upstream as possible to reduce the amount of data processed)
 WITH source AS (
 
     SELECT *
     FROM {{ source('jobs', 'raw_job_postings') }}
-    -- staging's door (3.03.3): the scraper flags its own failures — error is TRUE
-    -- on the 151,147 failure rows and NULL otherwise, so IS NOT TRUE keeps the
-    -- good rows (= false would null-compare them all away). raw keeps the record.
-    WHERE error IS NOT TRUE
-    -- the earned cut (3.09.4): 6,255 id-less incident-window postings — real rows,
-    -- dropped with eyes open; an id-less row can't be deduped or joined
-      AND job_id IS NOT NULL
 
+    -- Drop failed scrapes. The scraper sets error = TRUE on its 151,147 failed
+    -- rows and leaves it NULL on good rows. We use IS NOT TRUE because
+    -- `error = FALSE` would also drop the NULL (good) rows.
+    -- The failed rows are still kept in the raw table.
+    WHERE error IS NOT TRUE
+
+    -- Drop the 6,255 postings with no job_id. They are real postings, but
+    -- without an id we can't remove duplicates or join them to skills.
+      AND job_id IS NOT NULL
 ),
 
--- parse the extensions JSON once; the loop below probes the parsed array
+-- Parse the extensions JSON once here, so the loop below can reuse the array.
 parsed AS (
 
     SELECT
@@ -32,6 +39,7 @@ parsed AS (
 
 ),
 
+-- Clean data and parse salaries. The salary parsing is done in a macro.
 cleaned AS (
 
     SELECT
@@ -46,50 +54,48 @@ cleaned AS (
         job_title,
         TRIM(company_name) AS company_name,
         job_location,
-        REGEXP_REPLACE(job_via, '^via ', '') AS source_platform,  -- 'via LinkedIn' scraper artifact, ~6.3k rows
+        REGEXP_REPLACE(job_via, '^via ', '') AS source_platform,  -- 'via LinkedIn' -> 'LinkedIn' (~6.3k rows have the 'via ' prefix)
         job_schedule_type,
         job_work_from_home,
 
-        -- relative posted time, kept RAW: search_date carries the course's time
-        -- axis (~95% of rows are scraped within a day of posting, so the two
-        -- nearly agree); parsing this precisely is a supporter exercise
+        -- Relative text like '3 days ago', kept as-is. We use search_date for
+        -- dates instead: ~95% of postings are scraped within a day of being
+        -- posted, so the two are almost always the same.
         job_posted_at,
 
-        -- salary text to numbers; raw text kept, the snapshot lesson diffs it across scrapes
+        -- Salary text turned into numbers. The original text is kept too,
+        -- so the snapshot can spot when a posting changes its salary.
         job_salary,
         {{ parse_salary('min') }} AS salary_min,
         {{ parse_salary('max') }} AS salary_max,
 
-        -- the standard salary measure: midpoint of the parsed range (a single value
-        -- is its own range). UNIT-AGNOSTIC on purpose — consumers pair it with
-        -- salary_period + salary_currency filters; averaging across units is on them
+        -- Main salary measure: the middle of the range (a single value is used as-is).
+        -- It mixes currencies and periods (hourly, yearly...), so filter on
+        -- salary_currency and salary_period before averaging it.
         ({{ parse_salary('min') }} + {{ parse_salary('max') }}) / 2 AS salary_avg,
 
         NULLIF(REGEXP_EXTRACT(job_salary, 'an? (year|hour|month|day|week)$', 1), '') AS salary_period,
         
-        -- leading marker ('PKR', 'CA$', '₱', ...); a salaried row with NO marker is
-        -- assumed USD — stamped explicitly so consumers write salary_currency = 'USD'
-        -- instead of remembering what a null means. salary-less rows stay null
+        -- Currency comes from the text before the number ('PKR', 'CA$', '₱', ...).
+        -- If there's a salary but no currency marker, we set 'USD', so you can
+        -- simply filter on salary_currency = 'USD'. No salary means NULL.
         CASE
             WHEN job_salary IS NOT NULL
             THEN COALESCE(NULLIF(TRIM(REGEXP_EXTRACT(job_salary, '^([^0-9]+)', 1)), ''), 'USD')
         END AS salary_currency,
 
-        -- one boolean per extension keyword: the loop probes the parsed
-        -- array, slugify names the columns
-        {% for keyword in extension_keywords %}
 
+        -- One TRUE/FALSE column per keyword in extension_keywords (top of file),
+        -- e.g. 'Paid time off' becomes has_paid_time_off.
+        {% for keyword in extension_keywords %}
         ARRAY_CONTAINS(
             job_extensions,
             '{{ keyword }}'
         ) AS has_{{ slugify(keyword) }}
-        
         {{- "," if not loop.last }}
-
         {% endfor %}
 
     FROM parsed
-
 )
 
 SELECT * FROM cleaned

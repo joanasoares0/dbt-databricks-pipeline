@@ -1,7 +1,8 @@
-# OPTIONAL — this file is not required for anything to run. Descriptions only,
-# for `dbt docs generate`; deliberately no tests here (dim_skill's PK tests
-# already police skill_id downstream). Not covered in the lessons — kept as a
-# reference pattern for going above and beyond.
+# Optional: nothing needs this file to run. It only adds descriptions
+# to the docs site built by `dbt docs generate`.
+# There are no tests here on purpose: dim_skill already tests skill_id
+# (unique and not null), so testing it again here would be redundant.
+
 seeds:
   - name: skill_categories
     description: >

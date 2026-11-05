@@ -1,5 +1,6 @@
 # Job Postings Pipeline: dbt + Databricks
 
+[![dbt Docs](https://img.shields.io/badge/dbt_docs-live-blue)](https://joanasoares0.github.io/dbt-databricks-pipeline/)
 ![dbt](https://img.shields.io/badge/dbt-Fusion_2.0-FF694B)
 ![Databricks](https://img.shields.io/badge/warehouse-Databricks-FF3621)
 ![Unity Catalog](https://img.shields.io/badge/governance-Unity_Catalog-1B3139)
@@ -83,6 +84,30 @@ load_raw  ──►  dbt_build
 - **Prod isolation**: only the job writes to the `prod` catalog; local development always targets `dev`
 
 `dbt build` loads seeds, builds models and snapshots, and runs every test in DAG order. A failing test stops the models downstream of it from building.
+
+### Setting up the job in Databricks
+
+1. **Connect the repo as a Git folder.** In *Workspace → Create → Git folder*, paste this repo's GitHub URL. Databricks clones it, and the notebook and dbt project become visible inside the workspace.
+2. **Create the job** in *Jobs & Pipelines → Create job* with two tasks, both using **Git** as the source (branch `main`):
+   - **`load_raw`** (ingestion): a *Notebook* task pointing at `scripts/load_raw.py`
+   - **`dbt_build`** (transformation): a *dbt* task with project directory `analytics`, catalog `prod`, the SQL warehouse attached, and the commands `dbt deps`, `dbt debug`, `dbt build`. It depends on `load_raw`.
+3. **Add a schedule** under *Schedules & Triggers*.
+
+The resulting configuration is exported to [`jobs/job_dbt_databricks_pipeline.yml`](jobs/job_dbt_databricks_pipeline.yml), so the job can be recreated or reviewed as code.
+
+---
+
+## 📖 Docs
+
+**→ [joanasoares0.github.io/dbt-databricks-pipeline](https://joanasoares0.github.io/dbt-databricks-pipeline/)**
+
+The dbt docs site shows:
+
+- The full **lineage graph**: raw → staging → intermediate → marts → snapshot
+- **Model and column descriptions** from the properties YAMLs
+- Which columns carry **tests**
+
+The same descriptions also live in the warehouse: `persist_docs` pushes them into Unity Catalog, so Catalog Explorer shows them next to the data.
 
 ---
 

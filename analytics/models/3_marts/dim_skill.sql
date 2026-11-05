@@ -6,9 +6,8 @@ observations AS (
     SELECT * FROM {{ ref('int_skill_observations') }}
 )
 
--- a pure SERVE model: intermediate did the counting, the seed brings the
--- taxonomy; every observed skill_id sits inside the 1,422-row seed, so the
--- seed is the spine
+-- One row per skill. The counting already happened in int_skill_observations;
+-- this model just adds names and categories from the skill_categories seed.
 SELECT
     skill_id,
     display_name,

@@ -1,8 +1,14 @@
--- skill demand across the whole star (fct ⋈ bridge ⋈ dim_skill).
--- a QUESTION, not a model — it lives in analyses/ (3.08.2). all roles by default;
--- pick yours with:
---   dbt compile --select in_demand_skills --vars 'job_title: Data Analyst'
--- then read target/compiled/analytics/analyses/in_demand_skills.sql (compile writes the file, it prints nothing)
+{#-
+    Which skills appear in the most job postings?
+    Joins fct_job_postings, bridge_job_skills and dim_skill.
+
+    This is an analysis, not a model: dbt compiles it but never creates a table.
+    
+    It covers all roles by default. To look at one role:
+      dbt compile --select in_demand_skills --vars 'job_title: Data Analyst'
+    Then open target/compiled/analytics/analyses/in_demand_skills.sql
+    (compile writes the SQL to that file, it doesn't print it).
+-#}
 
 WITH job_postings AS (
 

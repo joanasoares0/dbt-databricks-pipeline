@@ -1,8 +1,12 @@
--- biggest salary swings per posting (optional second payoff for 3.11.3).
--- no LAG needed: a job's versions are just rows, so MIN/MAX across them IS the
--- swing. USD only — mixed currencies (COP, KRW, INR) swamp the board otherwise.
--- live receipt: the top is a TYPO board (a PMO Analyst going 60K → 1,000,000) —
--- which is the point: snapshots catch postings mid-edit; this is QA as analysis.
+{#-
+    Which postings changed their salary the most?
+    Reads the snapshot, where each version of a job is its own row, so the gap
+    between the lowest and highest salary_max is the swing. No LAG needed.
+    USD only: otherwise currencies like COP, KRW or INR fill the top 10.
+
+    The top results are mostly typos (e.g. a PMO Analyst going from 60K to
+    1,000,000), which makes this a handy data quality check.
+-#}
 
 SELECT
     job_title,
@@ -12,6 +16,6 @@ SELECT
     MAX(salary_max) - MIN(salary_max) AS salary_swing
 FROM {{ ref('job_postings_snapshot') }}
 WHERE salary_currency = 'USD'
-GROUP BY job_id, job_title, company_name  -- per-job grain; title + company for display
+GROUP BY job_id, job_title, company_name  -- one row per job; title and company are just for display
 ORDER BY salary_swing DESC
 LIMIT 10

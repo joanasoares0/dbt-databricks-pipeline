@@ -1,6 +1,6 @@
-# OPTIONAL — this file is not required for anything to run. Singular tests
-# accept description properties from dbt 1.9; docs-only. Not covered in the
-# lessons — kept as a reference pattern for going above and beyond.
+# Optional: nothing needs this file to run.
+# It adds descriptions for singular tests to the docs site
+
 data_tests:
   - name: assert_salaries_sane
     description: >

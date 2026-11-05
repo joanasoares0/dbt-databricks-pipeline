@@ -1,10 +1,15 @@
--- jinja practice, kept as a scratchpad (3.41): compiled by dbt, never built.
--- run it with `dbt show --select jinja_practice`, or paste the compiled file
--- from target/compiled/ into any SQL surface.
--- role_slug joined at 3.43: the sandbox is where the new macro got tested
--- before it touched a real model — macros are project-wide.
--- the roles list stopped being hardcoded at 3.53: dbt_utils.get_column_values
--- asks the column itself, at parse time, so the loop follows the data.
+{#-
+    A scratchpad for practicing Jinja. dbt compiles it but never builds it.
+    
+    Run it with `dbt show --select jinja_practice`, or copy the compiled SQL
+    from target/compiled/ into any SQL editor.
+
+    What it shows:
+      - a loop that writes one SELECT per role, joined with UNION ALL
+      - the slugify macro, tried out here before it was used in a real model
+      - dbt_utils.get_column_values, which reads the list of roles from the
+        data itself, so new roles show up without editing this file
+-#}
 
 {% set roles = dbt_utils.get_column_values(ref('stg_job_postings'), 'search_term') -%}
 

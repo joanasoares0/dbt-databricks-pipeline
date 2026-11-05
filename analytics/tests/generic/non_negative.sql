@@ -1,6 +1,13 @@
-{#- a custom GENERIC test: a macro-style block that returns FAILING rows.
-    saved in tests/generic/, called from any properties yml like the
-    built-ins. OPTIONAL on camera; deep patterns in supporter (B.2). -#}
+{#-
+    Custom generic test: checks that a column has no negative values.
+
+    Like dbt's built-in tests, it returns the rows that FAIL, so zero rows
+    means the test passes. 
+    
+    Because it lives in tests/generic/, you can add it
+    to any column in a properties .yml file, just like `not_null` or `unique`.
+-#}
+
 {% test non_negative(model, column_name) %}
 
 SELECT *

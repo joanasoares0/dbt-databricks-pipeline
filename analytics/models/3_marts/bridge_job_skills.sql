@@ -6,9 +6,9 @@ job_postings AS (
     SELECT * FROM {{ ref('fct_job_postings') }}
 )
 
--- inner join scopes pairs to jobs that made fct. on today's data it drops
--- zero rows — it's here so integrity holds by construction, not by luck,
--- when the data changes
+-- The INNER JOIN keeps only skills for jobs that exist in fct_job_postings.
+-- Today it doesn't drop any rows, but it guarantees every job_id here
+-- matches a job in fct, even if the data changes later.
 SELECT
     job_id,
     skill_id,

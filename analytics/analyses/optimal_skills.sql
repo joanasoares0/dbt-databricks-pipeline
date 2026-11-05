@@ -1,17 +1,20 @@
--- high demand AND high salary; the demand floor keeps
--- one-posting salary outliers out of the ranking. SUPPORTER BONUS attached to
--- 3.08 (practice-problem tier, not filmed) — an analysis, not a mart: it ANSWERS
--- a question on the star (fct ⋈ bridge ⋈ dim_skill), it doesn't serve one.
--- demand counts ALL jobs, the salary average only the salaried ones (avg()
--- skips nulls itself).
+{#-
+    Which skills are both in high demand AND well paid?
+    Only skills in at least 100 postings are ranked, so a skill that appears in
+    one high-paying posting doesn't end up at the top.
+
+    Demand counts every job. 
+    The salary average only uses jobs that list a
+    yearly USD salary (AVG skips NULLs on its own).
+-#}
 
 WITH bridge AS (
     SELECT DISTINCT job_id, skill_id FROM {{ ref('bridge_job_skills') }}
 ),
 
 job_postings AS (
-    -- the comparable-pay rule, stated once for this file: USD yearly only.
-    -- derived here (not a WHERE) so the demand denominator still counts every job
+    -- Only yearly USD salaries are compared; other salaries become NULL.
+    -- We use CASE instead of WHERE so every job still counts toward demand.
     SELECT
         job_id,
         CASE

@@ -1,19 +1,19 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # Load raw — the EL step
-# MAGIC Downloads the course dataset from GitHub **directly into a Unity Catalog Volume**
-# MAGIC (no local files, no drag-and-drop), then lands it as bronze tables.
+# MAGIC # Load raw data
+# MAGIC Downloads the job postings dataset from GitHub **straight into a Unity Catalog Volume**
+# MAGIC (no local files needed), then creates the raw tables from those files.
 # MAGIC
-# MAGIC First time (To the Cloud): import this notebook (Workspace → Import → URL) and **Run all**.
-# MAGIC Every night after (4.01): Task 1 of the Databricks Job, pulled from `scripts/load_raw.py` in your repo.
-# MAGIC Safe to rerun: files already in the Volume are skipped, the raw tables are re-landed.
-
-# ingest data from a github repo into databricks autoamtically, to a volume and then create tables out of those volume files.
+# MAGIC **First time:** import this notebook (Workspace → Import → URL) and click **Run all**.
+# MAGIC **After that:** it runs automatically as the first task of the Databricks Job
+# MAGIC (`jobs/job_dbt_databricks_pipeline.yml`), straight from this repo.
+# MAGIC
+# MAGIC Safe to run again: files already in the Volume are skipped, and the raw tables are rebuilt.
 
 # COMMAND ----------
 
 REPO = "lukebarousse/dbt_Analytics_Engineering_Course"
-TAG = "dataset-v1"                       # the course dataset release (pinned)
+TAG = "dataset-v1"                       # pinned dataset release, so every run gets the same files
 VOLUME = "/Volumes/raw/jobs/files"
 
 MONTHS = [
@@ -24,15 +24,16 @@ FILES = [f"raw_job_postings_{m}.parquet" for m in MONTHS] + ["raw_job_skills.par
 
 # COMMAND ----------
 
-# the landing zone: the raw catalog + a schema named for the source system (jobs) + a Volume for the files
-# (raw has ONE owner — this notebook; dev and prod both read it)
+# Create where the raw data lives: the raw catalog, a jobs schema and a Volume for the files.
+# Only this notebook writes to raw. The dev and prod dbt runs both read from it.
 spark.sql("CREATE CATALOG IF NOT EXISTS raw")
 spark.sql("CREATE SCHEMA IF NOT EXISTS raw.jobs")
 spark.sql("CREATE VOLUME IF NOT EXISTS raw.jobs.files")
 
 # COMMAND ----------
 
-# download from the GitHub release straight into the Volume (~85MB total)
+# Download the files from the GitHub release into the Volume (~85 MB in total).
+# Files that are already there are skipped.
 import urllib.request, os
 
 for name in FILES:
@@ -47,7 +48,7 @@ print("Done.")
 
 # COMMAND ----------
 
-# land the bronze tables — raw, untouched, exactly as the scraper delivered them
+# Create the raw tables from the files, exactly as the scraper delivered them (no cleaning yet)
 spark.sql(f"""
     CREATE OR REPLACE TABLE raw.jobs.raw_job_postings AS
     SELECT * FROM read_files('{VOLUME}/raw_job_postings_*.parquet', format => 'parquet')
@@ -59,7 +60,7 @@ spark.sql(f"""
 
 # COMMAND ----------
 
-# sanity check — expect 843,097 postings and 3,304,574 skill rows
+# Quick check: you should see 843,097 postings and 3,304,574 skill rows
 display(spark.sql("""
     SELECT 'raw_job_postings' AS table, COUNT(*) AS rows FROM raw.jobs.raw_job_postings
     UNION ALL

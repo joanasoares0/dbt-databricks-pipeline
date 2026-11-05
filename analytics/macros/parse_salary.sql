@@ -1,9 +1,16 @@
-{#- the flagship macro: built at 3.51, installed twice at 3.52 (min, then
-    max), extracted once here. expects the raw job_salary column in scope.
-    handles: en-dash ranges ('100K–186K a year'), single values (both bounds),
-    K/M suffixes, thousands commas + decimals, currency prefixes (ignored here;
-    salary_currency owns them). serverless runs ansi mode, so every cast is a
-    try_cast: unprofiled shapes degrade to null, never error. -#}
+{#-
+    Turn salary text into a number.
+
+    Pass 'min' for the lower bound or 'max' for the upper bound, e.g.
+    '$100K–$186K a year' gives 100000 for min and 186000 for max.
+    The query calling this macro must have the raw job_salary column available.
+
+    What it handles:
+      - ranges split by an en dash ('100K–186K a year')
+      - single values (used for both min and max)
+      - K and M suffixes, thousands commas and decimals
+      - currency symbols are skipped here (salary_currency handles those)
+-#}
 {% macro parse_salary(part) -%}
 
     {%- if part == 'min' -%}

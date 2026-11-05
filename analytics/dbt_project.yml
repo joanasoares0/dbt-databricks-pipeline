@@ -21,9 +21,31 @@ models:
       relation: true 
       columns: true 
 
+    # How much dbt checks each model's SQL before running it (a dbt Fusion feature).
+    # dbt reads the SQL itself and looks up every column and its data type in the
+    # upstream models and sources. Mistakes like a misspelled column or a wrong
+    # type fail in seconds, before any Databricks compute is used.
+    #
+    #   strict   - full check of every model; anything dbt can't confirm is an error.
+    #              Also gives column-level lineage in the docs site.
+    #   baseline - lighter check: catches clear errors but lets through what it
+    #              can't fully confirm (the default in recent Fusion versions).
+    #   off      - no check; dbt sends the SQL to Databricks and lets it fail there.
+    #
+    # Turn it off for a single model, rather than for the whole project, when dbt
+    # can't know the model's columns in advance:
+    #   - the SQL depends on queries dbt runs while building it
+    #     (run_query, dbt_utils.get_column_values, dbt_utils.pivot, ...)
+    #   - it uses SQL or functions specific to Databricks that dbt doesn't
+    #     understand yet, and the check fails even though the query works
+    #   - it reads tables dbt doesn't know about (not defined as a ref or source)
+    # To do that, add this at the top of the model:
+    #   {{ config(static_analysis='off') }}
+    
     +static_analysis: strict
 
-    # Materialize staging models as views, and marts as tables
+    # Staging and intermediate models are views (cheap, always up to date).
+    # Marts are tables, so dashboards and analyses can query them fast.
     1_staging:
       +materialized: view
       +schema: staging

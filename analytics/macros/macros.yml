@@ -1,7 +1,7 @@
-# OPTIONAL — this file is not required for anything to run. Macros work
-# undocumented; properties like these only feed `dbt docs generate`, so the
-# docs site can explain what each macro does and takes. Not covered in the
-# lessons — kept as a reference pattern for going above and beyond.
+# Optional: nothing needs this file to run. Macros work without it.
+# It only adds descriptions to the docs site built by `dbt docs generate`,
+# so readers can see what each macro does and which arguments it takes.
+
 macros:
   - name: parse_salary
     description: >
@@ -41,10 +41,12 @@ macros:
         type: any
         description: The model being built (unused; kept for the built-in's signature).
 
-  # documented HERE, not tests/tests.yml: that file documents test NODES
-  # (the singular test, or generated instances). a generic test DEFINITION
-  # never becomes a node — the test block registers as macro test_x, so only
-  # macro properties can bind to it.
+  # Why is a test documented in the macros file?
+  # A custom generic test like non_negative is really a macro behind the
+  # scenes: dbt registers `{% test non_negative %}` as a macro named
+  # test_non_negative. So its docs belong here with the other macros.
+  # tests/tests.yml is for the tests that actually run (singular tests and
+  # each place a generic test is applied), not for the test definition.
   - name: test_non_negative
     description: >
       The non_negative custom generic test (tests/generic/non_negative.sql).

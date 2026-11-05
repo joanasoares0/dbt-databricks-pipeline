@@ -2,6 +2,8 @@
 
 The transformation layer of the [Job Postings Pipeline](../README.md). It reads raw scrapes from `raw.jobs`, cleans and parses them, and serves a tested star schema plus an SCD2 history of every posting.
 
+📖 **Browse the docs site:** [joanasoares0.github.io/dbt-databricks-pipeline](https://joanasoares0.github.io/dbt-databricks-pipeline/) has the interactive lineage, model and column descriptions, and tests.
+
 > Locally this runs on the **dbt Fusion engine** against the `dev` catalog. In production, the Databricks Job runs the same project against `prod`.
 
 ---

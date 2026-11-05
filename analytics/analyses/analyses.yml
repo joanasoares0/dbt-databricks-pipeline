@@ -1,7 +1,7 @@
-# OPTIONAL — this file is not required for anything to run. Analyses are
-# compiled, never built or tested, so properties here are documentation only
-# (they surface in `dbt docs generate`). Not covered in the lessons — kept as
-# a reference pattern for going above and beyond.
+# Optional: nothing needs this file to run.
+# dbt compiles analyses but never builds or tests them, so this file only
+# adds their descriptions to the docs site built by `dbt docs generate`.
+
 analyses:
   - name: jinja_practice
     description: >

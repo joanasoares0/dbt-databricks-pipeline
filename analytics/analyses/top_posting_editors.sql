@@ -1,9 +1,11 @@
--- which companies edit their postings the most? the 3.11.3 payoff — a question
--- only the snapshot can answer (staging has the scrapes, but no notion of "changed").
--- the whole query leans on one idea: dbt_valid_to IS NOT NULL = a closed version
--- exists = that job changed at some point. the snapshot idiom, inverted.
--- live receipt: Meta 415 · Capital One 387 · Hertz 228 — the SCD lesson's own
--- example company (Facebook → Meta) turns out to be the biggest serial editor.
+{#-
+    Which companies edit their job postings the most?
+    Only the snapshot can answer this: staging has every scrape, but it doesn't
+    know whether anything changed between them.
+
+    The trick: if a job has a row where dbt_valid_to IS NOT NULL, an older
+    version was replaced, which means the posting was edited at least once.
+-#}
 
 SELECT
     company_name,
