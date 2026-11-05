@@ -5,7 +5,7 @@ models:
       re-scrapes update in place, new jobs insert.
     config:
       meta:
-        owner: luke
+        owner: joana
         tier: gold
     columns:
       - name: job_id
@@ -43,8 +43,8 @@ models:
       - name: salary_avg
         description: >
           Midpoint of the parsed salary range, unit-agnostic — pair with salary_period
-          and salary_currency filters (the course convention: currency = 'USD' and
-          period = 'year' for comparable annual pay).
+          and salary_currency filters (use currency = 'USD' and period = 'year'
+          for comparable annual pay).
       - name: salary_period
         description: Pay period parsed from the raw salary text (year, month, week, day, hour).
       - name: salary_currency

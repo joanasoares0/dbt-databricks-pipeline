@@ -95,6 +95,23 @@ load_raw  ──►  dbt_build
 
 The resulting configuration is exported to [`jobs/job_dbt_databricks_pipeline.yml`](jobs/job_dbt_databricks_pipeline.yml), so the job can be recreated or reviewed as code.
 
+**Next step: Databricks Asset Bundles.** Today the job is managed in the Databricks UI, and the YAML here is an export of it. The repo is already prepared to switch: [`databricks.yml`](databricks.yml) turns it into a [Databricks Asset Bundle](https://docs.databricks.com/aws/en/dev-tools/bundles/), but the bundle isn't in use yet. Moving to it would bring:
+
+- **The job under version control**: the YAML becomes the source of truth instead of an export, so every change to the job goes through Git and code review
+- **Deploy and test from the CLI**: `databricks bundle validate` catches config errors before anything is deployed, and `databricks bundle run` triggers the job from the terminal
+- **Separate dev and prod targets**: the same job definition deploys to a personal dev copy for testing and to prod for the scheduled run
+- **No ids hard-coded in the repo**: values like the warehouse id come from variables (here, `BUNDLE_VAR_warehouse_id` in `.env`)
+
+To try it, set `BUNDLE_VAR_warehouse_id=<id>` in `.env`, then:
+
+```bash
+set -a && source .env && set +a
+databricks bundle validate
+databricks bundle deploy
+```
+
+Deploying creates a new job next to the one made in the UI. To have the bundle take over the existing job instead, run `databricks bundle deployment bind job_dbt_databricks_pipeline <job-id>` before the first deploy.
+
 ---
 
 ## 📖 Docs
@@ -176,3 +193,5 @@ The same descriptions also live in the warehouse: `persist_docs` pushes them int
 ---
 
 *Built following Project #2 of Luke Barousse's [dbt for Data Analytics & Engineering course](https://github.com/lukebarousse/dbt_Analytics_Engineering_Course). Dataset: real job postings scraped daily, July 2025 – June 2026.*
+
+*The code is under the [MIT License](LICENSE). The dataset and skill taxonomy belong to the course and are not covered by it.*

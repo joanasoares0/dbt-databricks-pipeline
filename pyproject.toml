@@ -1,7 +1,7 @@
 [project]
 name = "dbt-databricks-pipeline"
 version = "0.1.0"
-description = "Add your description here"
+description = "End-to-end job postings pipeline: Databricks ingestion, dbt star schema, SCD2 snapshots and a scheduled Databricks Job"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [

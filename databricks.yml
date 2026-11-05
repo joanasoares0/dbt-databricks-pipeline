@@ -1,0 +1,15 @@
+# Databricks Asset Bundle: deploys the job in jobs/ with `databricks bundle deploy`.
+# Not in use yet: the job is still managed in the Databricks UI (see README, Orchestration).
+bundle:
+  name: dbt-databricks-pipeline
+
+include:
+  - jobs/*.yml
+
+variables:
+  warehouse_id:
+    description: SQL warehouse the dbt task runs on. Set BUNDLE_VAR_warehouse_id in .env.
+
+targets:
+  prod:
+    default: true

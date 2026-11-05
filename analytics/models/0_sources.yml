@@ -1,4 +1,4 @@
-# Raw data lives in raw.jobs. The schema is named after the system the data.
+# Raw data lives in raw.jobs. The schema is named after the system the data comes from.
 # scripts/load_raw.py loads these tables. dbt only reads them, it never writes to them.
 
 sources:

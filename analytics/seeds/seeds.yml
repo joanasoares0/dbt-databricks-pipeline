@@ -9,8 +9,7 @@ seeds:
       Hand-maintained mapping of every skill_id to a display name and
       category/subcategory rollup. The spine of dim_skill: a LEFT JOIN from
       here guarantees every cataloged skill gets a row, observed in postings
-      or not. Loaded with dbt seed; students fetch the CSV from
-      lukeb.co/skill-categories.
+      or not. Loaded with dbt seed.
     columns:
       - name: skill_id
         description: Skill key; joins stg_job_skills and anchors dim_skill's PK.

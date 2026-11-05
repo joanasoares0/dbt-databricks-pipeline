@@ -3,9 +3,8 @@ models:
     description: >
       One row per posting per scrape day; a job re-scraped across days keeps every row
       (the snapshot depends on them; fct_job_postings dedupes to one row per job).
-      685,695 rows after two cuts: the door-drop (151,147 scraper-flagged error rows —
-      staging's first cleanup, 3.03.3) and the test-earned null-id cut (6,255 id-less
-      incident-window postings, 3.09.4).
+      685,695 rows after two filters: 151,147 rows the scraper flagged as errors, and
+      6,255 postings with no job_id (they can't be deduplicated or joined).
     columns:
       - name: job_id
         description: >
@@ -37,8 +36,8 @@ models:
         description: >
           As scraped; 12,252 nulls stay null (documented, not fixed). 17 distinct values in
           the wild, including combos like 'Full-time and Part-time' (25,242 rows), so the naive
-          four-value test below fails 28,776 rows by design: the 3.09.2 finding, kept visible at
-          warn severity instead of silently "fixed".
+          four-value test below flags 28,776 rows on purpose. It runs at warn severity so
+          this data quirk stays visible instead of being silently "fixed".
         data_tests:
           - accepted_values:
               arguments:
@@ -49,11 +48,10 @@ models:
         description: True when the posting is flagged remote.
       - name: job_posted_at
         description: >
-          Raw relative posted time ('10 hours ago'), kept unparsed — search_date carries the
-          course's time axis (~95% of rows are scraped within a day of posting); parsing this
-          precisely is a supporter exercise.
+          Raw relative posted time ('10 hours ago'), kept unparsed. search_date is used as
+          the date instead: ~95% of rows are scraped within a day of posting.
       - name: job_salary
-        description: Raw salary text, kept unparsed; the snapshot lesson diffs it across scrapes.
+        description: Raw salary text, kept unparsed so the snapshot can track salary edits across scrapes.
       - name: salary_min
         description: Lower bound parsed from the salary text; the single value when no range is given.
         data_tests:
@@ -97,9 +95,8 @@ models:
     columns:
       - name: job_id
         description: >
-          Every row's parent exists in stg_job_postings; the course export's join guarantees
-          it, so the relationships test passes by construction. Same assertion the datanerd
-          pipeline runs nightly in production, where integrity is a real risk.
+          Every row's job exists in stg_job_postings. The source export already
+          guarantees this; the relationships test checks it stays true if the data changes.
         data_tests:
           - not_null
           - relationships:

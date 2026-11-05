@@ -23,7 +23,8 @@ resources:
               - dbt debug
               - dbt build
             schema: default
-            warehouse_id: 646efd6be9d1e139
+            # filled in at deploy time from BUNDLE_VAR_warehouse_id (kept in .env)
+            warehouse_id: ${var.warehouse_id}
             catalog: prod
             source: GIT
           environment_key: dbt-default

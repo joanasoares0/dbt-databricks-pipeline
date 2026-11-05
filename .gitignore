@@ -9,8 +9,12 @@ wheels/
 # Virtual environments
 .venv
 
+.env 
+
 .vscode/
 
 logs/
 
 img/
+# Databricks bundle state
+.databricks/
